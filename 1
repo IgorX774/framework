@@ -1,0 +1,194 @@
+- src
+  - controle
+    - ControleEditora.ts
+    - ControleLivros.ts
+  - modelo
+    - Editora.ts
+    - Livro.ts
+  - componentes
+    - LivroDados.tsx
+    - LivroLista.tsx
+  - App.tsx
+export class Editora {
+  constructor(public codEditora: number, public nome: string) {}
+}
+export class Livro {
+  constructor(
+    public codigo: number,
+    public codEditora: number,
+    public titulo: string,
+    public resumo: string,
+    public autores: string[]
+  ) {}
+}
+import { Editora } from '../modelo/Editora';
+
+const editoras: Array<Editora> = [
+  { codEditora: 1, nome: 'Editora A' },
+  { codEditora: 2, nome: 'Editora B' },
+  { codEditora: 3, nome: 'Editora C' }
+];
+
+export class ControleEditora {
+  getEditoras(): Array<Editora> {
+    return editoras;
+  }
+
+  getNomeEditora(codEditora: number): string {
+    const editora = editoras.find((editora) => editora.codEditora === codEditora);
+    return editora ? editora.nome : '';
+  }
+}
+import { Livro } from '../modelo/Livro';
+
+const livros: Array<Livro> = [
+  { codigo: 1, codEditora: 1, titulo: 'Livro 1', resumo: 'Resumo do Livro 1', autores: ['Autor 1', 'Autor 2'] },
+  { codigo: 2, codEditora: 2, titulo: 'Livro 2', resumo: 'Resumo do Livro 2', autores: ['Autor 3'] },
+  { codigo: 3, codEditora: 3, titulo: 'Livro 3', resumo: 'Resumo do Livro 3', autores: ['Autor 4', 'Autor 5'] }
+];
+
+export class ControleLivros {
+  obterLivros(): Array<Livro> {
+    return livros;
+  }
+
+  excluir(codigo: number): void {
+    const indice = livros.findIndex((livro) => livro.codigo === codigo);
+    if (indice >= 0) {
+      livros.splice(indice, 1);
+    }
+  }
+}
+import React, { useState, useEffect } from 'react';
+import { ControleLivros } from '../controle/ControleLivros';
+import { ControleEditora } from '../controle/ControleEditora';
+import { Livro } from '../modelo/Livro';
+
+const LivroLista: React.FC = () => {
+  const [livros, setLivros] = useState<Livro[]>([]);
+  const controleLivros = new ControleLivros();
+  const controleEditoras = new ControleEditora();
+
+  const excluirLivro = (codigo: number) => {
+    controleLivros.excluir(codigo);
+    setLivros(controleLivros.obterLivros());
+  };
+
+  useEffect(() => {
+    setLivros(controleLivros.obterLivros());
+  }, []);
+
+  return (
+    <div>
+      <h1>Lista de Livros</h1>
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Editora</th>
+            <th>Resumo</th>
+            <th>Autores</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {livros.map((livro) => (
+            <tr key={livro.codigo}>
+              <td>{livro.titulo}</td>
+              <td>{controleEditoras.getNomeEditora(livro.codEditora)}</td>
+              <td>{livro.resumo}</td>
+              <td>{livro.autores.join(', ')}</td>
+              <td>
+                <button className="btn btn-danger" onClick={() => excluirLivro(livro.codigo)}>
+                  Excluir
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default LivroLista;
+import React, { useState } from 'react';
+import { ControleLivros } from '../controle/ControleLivros';
+import { ControleEditora } from '../controle/ControleEditora';
+import { Livro } from '../modelo/Livro';
+
+const LivroDados: React.FC = () => {
+  const controleLivros = new ControleLivros();
+  const controleEditoras = new ControleEditora();
+
+  const [titulo, setTitulo] = useState('');
+  const [resumo, setResumo] = useState('');
+  const [codEditora, setCodEditora] = useState(1);
+  const [autores, setAutores] = useState('');
+
+  const adicionarLivro = () => {
+    const novoLivro = new Livro(
+      controleLivros.obterLivros().length + 1,
+      codEditora,
+      titulo,
+      resumo,
+      autores.split(',').map((autor) => autor.trim())
+    );
+    controleLivros.obterLivros().push(novoLivro);
+  };
+
+  return (
+    <div>
+      <h2>Adicionar Livro</h2>
+      <form>
+        <div className="form-group">
+          <label htmlFor="titulo">Título:</label>
+          <input type="text" className="form-control" id="titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label htmlFor="resumo">Resumo:</label>
+          <textarea className="form-control" id="resumo" value={resumo} onChange={(e) => setResumo(e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label htmlFor="editora">Editora:</label>
+          <select className="form-control" id="editora" value={codEditora} onChange={(e) => setCodEditora(parseInt(e.target.value))}>
+            {controleEditoras.getEditoras().map((editora) => (
+              <option key={editora.codEditora} value={editora.codEditora}>
+                {editora.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="form-group">
+          <label htmlFor="autores">Autores (separados por vírgula):</label>
+          <input type="text" className="form-control" id="autores" value={autores} onChange={(e) => setAutores(e.target.value)} />
+        </div>
+        <button type="button" className="btn btn-primary" onClick={adicionarLivro}>
+          Adicionar Livro
+        </button>
+      </form>
+    </div>
+  );
+};
+
+export default LivroDados;
+import React from 'react';
+import LivroLista from './componentes/LivroLista';
+import LivroDados from './componentes/LivroDados';
+
+const App: React.FC = () => {
+  return (
+    <div className="container">
+      <LivroDados />
+      <LivroLista />
+    </div>
+  );
+};
+
+export default App;
+<link
+  href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+  rel="stylesheet"
+/>
+npm start
+
